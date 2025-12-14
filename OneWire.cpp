@@ -148,10 +148,14 @@ sample code bearing this copyright.
 #include "OneWire.h"
 #include "util/OneWire_direct_gpio.h"
 
+static portMUX_TYPE oneWireMux = portMUX_INITIALIZER_UNLOCKED;
+
 #ifdef ARDUINO_ARCH_ESP32
 // due to the dual core esp32, a critical section works better than disabling interrupts
-#  define noInterrupts() {portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;portENTER_CRITICAL(&mux)
-#  define interrupts() portEXIT_CRITICAL(&mux);}
+#  undef noInterrupts
+#  undef interrupts
+#  define noInterrupts()   portENTER_CRITICAL(&oneWireMux)
+#  define interrupts()     portEXIT_CRITICAL(&oneWireMux)
 // for info on this, search "IRAM_ATTR" at https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/general-notes.html 
 #  define CRIT_TIMING IRAM_ATTR
 #else
@@ -596,8 +600,8 @@ uint16_t OneWire::crc16(const uint8_t* input, uint16_t len, uint16_t crc)
 
 // undef defines for no particular reason
 #ifdef ARDUINO_ARCH_ESP32
-#  undef noInterrupts() {portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;portENTER_CRITICAL(&mux)
-#  undef interrupts() portEXIT_CRITICAL(&mux);}
+#  undef noInterrupts
+#  undef interrupts
 #endif
 // for info on this, search "IRAM_ATTR" at https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/general-notes.html 
-#undef CRIT_TIMING 
+#undef CRIT_TIMING
